@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import Hls from 'hls.js';
 // import NextHead from "next/head"
 import { FC } from 'react';
+import { Title } from '@mantine/core';
 
 interface Props {
   src: string;
@@ -27,6 +28,7 @@ const Player: FC<Props> = ({ src }) => {
         <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
       </NextHead> */}
       <div className='content'>
+        <Title order={1}>test</Title>
         {isSupportBrowser ? (
           <div className='videoContainer'>
             <video ref={videoRef} className='video' controls></video>
@@ -39,8 +41,9 @@ const Player: FC<Props> = ({ src }) => {
       </div>
       <style jsx>{`
         .video {
-          width: 100%;
-          height: auto;
+          width: 65%;
+          margin-left: 5%;
+          height: calc(100% - 56px);
           vertical-align: top;
         }
       `}</style>
