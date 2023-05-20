@@ -8,13 +8,19 @@ type MsgFromClient = {
   stream_id: string
   comment: string
   reaction: boolean
+  is_connected: boolean
+}
+
+type MsgFromServer = {
+  comments: string[]
+  reaction: number
 }
 
 const Test = () => {
   const socketRef = useRef<WebSocket>()
   const [isConnected, setIsConnected] = useState<boolean>(false)
-  const [formMessage, setFormMessage] = useState('')
-  const [sentMessage, setSentMessage] = useState('')
+  const [formMessage, setFormMessage] = useState<string>('')
+  const [sentMessage, setSentMessage] = useState<MsgFromServer>({comments: [], reaction: 0})
 
   const sendComment = (e: any) => {
     e.preventDefault()
@@ -23,8 +29,15 @@ const Test = () => {
   }
 
   const sendReaction = (e: any) => {
-
-  }
+    e.preventDefault()
+    const msg: MsgFromClient = {
+      stream_id: streamId,
+      comment: '',
+      reaction: true,
+      is_connected: true
+    }
+    socketRef.current?.send(JSON.stringify(msg))
+}
 
   useEffect(() => {
     socketRef.current = new WebSocket('ws://localhost:8001/socket')
@@ -35,10 +48,10 @@ const Test = () => {
       const msg: MsgFromClient = {
         stream_id: streamId,
         comment: '',
-        reaction: false
+        reaction: false,
+        is_connected: true
       }
       socketRef.current?.send(JSON.stringify(msg))
-      console.log(JSON.stringify(msg))
       setIsConnected(true)
       console.log('Connected')
     }
@@ -49,9 +62,10 @@ const Test = () => {
       setIsConnected(false)
     }
 
-    // server 側から送られてきたデータを受け取る
+    // Server側から送られてきたデータの処理
     socketRef.current.onmessage = function (event) {
-      setSentMessage(event.data)
+      const obj: MsgFromServer = JSON.parse(event.data)
+      setSentMessage(obj)
     }
 
     return () => {
@@ -72,8 +86,8 @@ const Test = () => {
       </form>
       <button type="button" onClick={sendReaction}>Reaction</button>
 
-      <h3>form message: {formMessage}</h3>
-      <h3>sent message: {sentMessage}</h3>
+      <h3>Comments: {sentMessage.comments}</h3>
+      <h3>Reactions: {sentMessage.reaction}</h3>
 
     </>
   )
