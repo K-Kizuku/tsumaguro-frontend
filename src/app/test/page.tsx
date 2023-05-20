@@ -19,13 +19,21 @@ type MsgFromServer = {
 const Test = () => {
   const socketRef = useRef<WebSocket>()
   const [isConnected, setIsConnected] = useState<boolean>(false)
-  const [formMessage, setFormMessage] = useState<string>('')
   const [sentMessage, setSentMessage] = useState<MsgFromServer>({comments: [], reaction: 0})
 
   const sendComment = (e: any) => {
     e.preventDefault()
-    setFormMessage(e.target[0].value)
-    socketRef.current?.send(e.target[0].value)
+    if (e.target[0].value == '')
+      return
+
+    const msg: MsgFromClient = {
+      stream_id: streamId,
+      comment: e.target[0].value,
+      reaction: false,
+      is_connected: true
+    }
+    socketRef.current?.send(JSON.stringify(msg))
+    e.target[0].value = ''
   }
 
   const sendReaction = (e: any) => {
@@ -66,8 +74,8 @@ const Test = () => {
     socketRef.current.onmessage = function (event) {
       const obj: MsgFromServer = JSON.parse(event.data)
       setSentMessage(obj)
+      console.log(obj.comments)
     }
-
     return () => {
       if (socketRef.current == null) {
         return
