@@ -25,3 +25,171 @@
     )
     rgb(var(--background-start-rgb));
 } */
+.containner{
+  /* display: flex; */
+  position: absolute;
+  top: 20%;
+  width: 100vw;
+  height: 100vh;
+  margin: auto;
+}
+/* サイコロ本体 */
+.dice {
+  display:block;
+  position:relative;
+  margin:0 auto;
+  width:200px;
+  height:300px;
+  transform-style:preserve-3d;
+}
+
+  /* 目 */
+  .dice .item {
+      position:absolute;
+      left:0;
+      right:0;
+      display:flex;
+      flex-direction:row;
+      align-items:center;
+      justify-content:center;
+      box-sizing:border-box;
+      border:1px solid #333;
+      width:100px;
+      height:100px;
+      background-color:rgba(0, 0, 0, 0.5);
+      font-size:3rem;
+      text-align:center;
+      color:#fff;
+  }
+
+  /* 目1を上に配置 */
+  .dice .item:nth-child(1) {
+      transform:translate3d(0, -50px, 0) rotateX(-90deg);
+  }
+
+  /* 目2を前に配置 */
+  .dice .item:nth-child(2) {
+      transform:translate3d(0, 0, 50px);
+  }
+
+  /* 目3を右に配置 */
+  .dice .item:nth-child(3) {
+      transform:translate3d(50px, 0, 0) rotateY(90deg);
+  }
+
+  /* 目4を左に配置 */
+  .dice .item:nth-child(4) {
+      transform:translate3d(-50px, 0, 0) rotateY(-90deg);
+  }
+
+  /* 目5を後ろに配置 */
+  .dice .item:nth-child(5) {
+      transform:translate3d(0, 0, -50px) rotateY(180deg);
+  }
+
+  /* 目6を下に配置 */
+  .dice .item:nth-child(6) {
+      transform:translate3d(0, 50px, 0) rotateX(-90deg);
+  }
+  @keyframes rotate-animation {
+    from {
+        transform:rotate3d(0);
+    }
+ 
+    to {
+        transform:rotate3d(1, 1, 1, -360deg);
+    }
+}
+ 
+.stage {
+    perspective:300px;
+}
+ 
+.dice {
+    animation:rotate-animation 5s alternate infinite;
+}
+
+.containner1{
+  /* display: flex; */
+  position: absolute;
+  top: 13px;
+  left: 5%;
+  /* width: 100vw;
+  height: 100vh; */
+  /* margin: auto; */
+}
+/* サイコロ本体 */
+.dice1 {
+  display:block;
+  position:relative;
+  margin:0 auto;
+  width:20px;
+  height:20px;
+  transform-style:preserve-3d;
+}
+
+  /* 目 */
+  .dice1 .item1 {
+      position:absolute;
+      left:0;
+      right:0;
+      display:flex;
+      flex-direction:row;
+      align-items:center;
+      justify-content:center;
+      box-sizing:border-box;
+      border:1px solid #333;
+      width:30px;
+      height:30px;
+      background-color:rgba(0, 0, 0, 0.5);
+      font-size:1.5rem;
+      text-align:center;
+      color:#fff;
+  }
+
+  /* 目1を上に配置 */
+  .dice1 .item1:nth-child(1) {
+      transform:translate3d(0, -15px, 0) rotateX(-90deg);
+  }
+
+  /* 目2を前に配置 */
+  .dice1 .item1:nth-child(2) {
+      transform:translate3d(0, 0, 15px);
+  }
+
+  /* 目3を右に配置 */
+  .dice1 .item1:nth-child(3) {
+      transform:translate3d(15px, 0, 0) rotateY(90deg);
+  }
+
+  /* 目4を左に配置 */
+  .dice1 .item1:nth-child(4) {
+      transform:translate3d(-15px, 0, 0) rotateY(-90deg);
+  }
+
+  /* 目5を後ろに配置 */
+  .dice1 .item1:nth-child(5) {
+      transform:translate3d(0, 0, -15px) rotateY(180deg);
+  }
+
+  /* 目6を下に配置 */
+  .dice1 .item1:nth-child(6) {
+      transform:translate3d(0, 15px, 0) rotateX(-90deg);
+  }
+  @keyframes rotate-animation1 {
+    from {
+        transform:rotate3d(0);
+    }
+ 
+    to {
+        transform:rotate3d(1, 1, 1, -360deg);
+    }
+}
+ 
+.stage1 {
+    perspective:300px;
+}
+ 
+.dice1 {
+    animation:rotate-animation1 5s linear infinite;
+}

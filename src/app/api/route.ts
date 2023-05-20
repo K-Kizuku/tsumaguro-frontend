@@ -1,3 +1,5 @@
+import { ManagedIdentityCredential } from '@azure/identity';
+import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import * as dotenv from 'dotenv';
 import * as readlineSync from 'readline-sync';
@@ -16,50 +18,46 @@ import {
 } from '@azure/arm-mediaservices';
 import moment from 'moment';
 
-dotenv.config();
+export async function GET() {
+  // Copy the samples.env file and rename it to .env first, then populate it's values with the values obtained
+  // from your Media Services account's API Access page in the Azure portal.
+  const clientId: string = process.env.AADCLIENTID as string;
+  const secret: string = process.env.AADSECRET as string;
+  const tenantDomain: string = process.env.AADTENANTDOMAIN as string;
+  const subscriptionId: string = process.env.AZURE_SUBSCRIPTION_ID as string;
+  const resourceGroup: string = process.env.AZURE_RESOURCE_GROUP as string;
+  const accountName: string = process.env
+    .AZURE_MEDIA_SERVICES_ACCOUNT_NAME as string;
+  const userAssignedManagedIdentityClientId: string = process.env
+    .USER_ASSIGNED_MANAGED_IDENTITY_CLIENT_ID as string;
+  let hlsManifest;
 
-let mediaServicesClient: AzureMediaServices;
-
-const longRunningOperationUpdateIntervalMs = 2000;
-
-const subscriptionId: string = process.env.AZURE_SUBSCRIPTION_ID as string;
-const resourceGroup: string = process.env.AZURE_RESOURCE_GROUP as string;
-const accountName: string = process.env
-  .AZURE_MEDIA_SERVICES_ACCOUNT_NAME as string;
-
-// const credential = new ManagedIdentityCredential("<USER_ASSIGNED_MANAGED_IDENTITY_CLIENT_ID>");
-const credential = new DefaultAzureCredential();
-
-//////////////////////////////////////////
-//   Main entry point for sample script  //
-///////////////////////////////////////////
-export async function rtmp() {
+  let ingestUrl;
   let uniqueness = uuidv4().split('-')[0]; // Create a GUID for uniqueness
+  //   let uniqueness = 'test111';
   let liveEventName = `liveEvent-${uniqueness}`; // WARNING: Be careful not to leak live events using this sample!
   let assetName = `archiveAsset${uniqueness}`;
   let liveOutputName = `liveOutput${uniqueness}`;
   let streamingLocatorName = `liveStreamLocator${uniqueness}`;
   let streamingEndpointName = 'default'; // Change this to your specific streaming endpoint name if not using "default"
-  let mediaAccount: MediaservicesGetResponse;
+  const longRunningOperationUpdateIntervalMs = 2000;
+  // This sample uses the default Azure Credential object, which relies on the environment variable settings.
+  // If you wish to use User assigned managed identity, see the samples for v2 of @azure/identity
+  // Managed identity authentication is supported via either the DefaultAzureCredential or the ManagedIdentityCredential classes
+  // https://learn.microsoft.com/javascript/api/overview/azure/identity-readme?view=azure-node-latest
+  // See the following examples for how to authenticate in Azure with managed identity
+  // https://github.com/Azure/azure-sdk-for-js/blob/@azure/identity_2.0.1/sdk/identity/identity/samples/AzureIdentityExamples.md#authenticating-in-azure-with-managed-identity
 
-  let liveEvent: LiveEvent;
-  let liveOutput: LiveOutput;
+  //   const credential = new ManagedIdentityCredential(
+  //     userAssignedManagedIdentityClientId
+  //   );
+  const credential = new DefaultAzureCredential();
 
-  console.log('Starting the Live Streaming sample for Azure Media Services');
-  try {
-    mediaServicesClient = new AzureMediaServices(credential, subscriptionId);
-  } catch (err) {
-    console.log(`Error retrieving Media Services Client.`);
-  }
-
-  // Get the media services account object for information on the current location.
-  mediaAccount = await mediaServicesClient.mediaservices.get(
+  let mediaServicesClient = new AzureMediaServices(credential, subscriptionId);
+  const mediaAccount = await mediaServicesClient.mediaservices.get(
     resourceGroup,
     accountName
   );
-
-  // </CreateMediaServicesClient>
-
   try {
     let allowAllIPv4InputRange: IPRange = {
       name: 'Allow all IPv4 addresses',
@@ -273,7 +271,7 @@ export async function rtmp() {
     );
 
     if (liveEvent.input?.endpoints) {
-      let ingestUrl = liveEvent.input.endpoints[0].url;
+      ingestUrl = liveEvent.input.endpoints[0].url;
       console.log(`The RTMP ingest URL to enter into OBS Studio is:`);
       console.log(`RTMP ingest : ${ingestUrl}`);
       console.log(
@@ -312,11 +310,11 @@ export async function rtmp() {
     console.log(
       'PAUSE here in the Debugger until you are ready to continue...'
     );
-    if (readlineSync.keyInYN('Do you want to continue?')) {
-      //Yes
-    } else {
-      throw new Error('User canceled. Cleaning up...');
-    }
+    // if (readlineSync.keyInYN('Do you want to continue?')) {
+    //   //Yes
+    // } else {
+    //   throw new Error('User canceled. Cleaning up...');
+    // }
 
     // Create the Streaming Locator URL for playback of the contents in the Live Output recording
     console.log(`Creating a streaming locator named : ${streamingLocatorName}`);
@@ -363,249 +361,159 @@ export async function rtmp() {
     console.log(
       'PAUSE here in the Debugger until you are ready to continue...'
     );
-    if (
-      readlineSync.keyInYN('Do you want to continue and clean up the sample?')
-    ) {
-      //Yes
-    }
+    // if (
+    //   readlineSync.keyInYN('Do you want to continue and clean up the sample?')
+    // ) {
+    //   //Yes
+    // }
   } catch (err) {
     console.log(err);
     console.error(
       'WARNING: If you hit this message, double check the Portal to make sure you do not have any Running live events after using this Sample- or they will remain billing!'
     );
-  } finally {
-    // Cleaning Up all resources
-    //@ts-ignore - these will be set, so avoiding the compiler complaint for now.
-    console.log(
-      'Cleaning up resources, stopping Live Event billing, and deleting live Event...'
-    );
-    console.log(
-      "CRITICAL WARNING ($$$$) DON'T WASTE MONEY!: - Wait here for the All Clear - this takes a few minutes sometimes to clean up. DO NOT STOP DEBUGGER yet or you will leak billable resources!"
-    );
-    await cleanUpResources(liveEventName, liveOutputName);
-    console.log(
-      'All Clear, and all cleaned up. Please double check in the portal to make sure you have not leaked any Live Events, or left any Running still which would result in unwanted billing.'
-    );
   }
-}
+  //   finally {
+  //     // Cleaning Up all resources
+  //     //@ts-ignore - these will be set, so avoiding the compiler complaint for now.
+  //     console.log(
+  //       'Cleaning up resources, stopping Live Event billing, and deleting live Event...'
+  //     );
+  //     console.log(
+  //       "CRITICAL WARNING ($$$$) DON'T WASTE MONEY!: - Wait here for the All Clear - this takes a few minutes sometimes to clean up. DO NOT STOP DEBUGGER yet or you will leak billable resources!"
+  //     );
+  //     await cleanUpResources(liveEventName, liveOutputName);
+  //     console.log(
+  //       'All Clear, and all cleaned up. Please double check in the portal to make sure you have not leaked any Live Events, or left any Running still which would result in unwanted billing.'
+  //     );
+  //   }
 
-rtmp().catch((err) => {
-  console.error('Error running live streaming sample:', err.message);
+  // List Assets in Account
+  //   console.log('Listing assets in account:');
+  //   for await (const asset of mediaServicesClient.assets.list(
+  //     resourceGroup,
+  //     accountName,
+  //     { top: 1000 }
+  //   )) {
+  //     console.log(asset.name);
+  //   }
 
-  if (err.name == 'RestError') {
-    // REST API Error message
-    console.error('Error request:\n\n', err.request);
-  }
-
-  console.error(
-    'WARNING: If you hit this message, double check the Portal to make sure you do not have any Running live events - or they will remain billing!'
-  );
-});
-
-// <BuildManifestPaths>
-
-// This method builds the manifest URL from the static values used during creation of the Live Output.
-// This allows you to have a deterministic manifest path. <streaming endpoint hostname>/<streaming locator ID>/manifestName.ism/manifest(<format string>)
-// マニフェストパスの取得
-export async function buildManifestPaths(
-  scheme: string,
-  hostname: string | undefined,
-  streamingLocatorId: string | undefined,
-  manifestName: string
-) {
-  const hlsFormat: string = 'format=m3u8-cmaf';
-  const dashFormat: string = 'format=mpd-time-cmaf';
-
-  let manifestBase = `${scheme}://${hostname}/${streamingLocatorId}/${manifestName}.ism/manifest`;
-  let hlsManifest = `${manifestBase}(${hlsFormat})`;
-  console.log(`The HLS (MP4) manifest URL is : ${hlsManifest}`);
-  console.log(
-    'Open the following URL to playback the live stream in an HLS compliant player (HLS.js, Shaka, ExoPlayer) or directly in an iOS device'
-  );
-  console.log(`${hlsManifest}`);
-  console.log();
-
-  let dashManifest = `${manifestBase}(${dashFormat})`;
-  console.log(`The DASH manifest URL is : ${dashManifest}`);
-  console.log(
-    'Open the following URL to playback the live stream from the LiveOutput in the Azure Media Player'
-  );
-  console.log(
-    `https://ampdemo.azureedge.net/?url=${dashManifest}&heuristicprofile=lowlatency`
-  );
-  console.log();
-  return `https://ampdemo.azureedge.net/?url=${dashManifest}&heuristicprofile=lowlatency`;
-}
-
-// </BuildManifestPaths>
-
-// This method demonstrates using the listPaths method on Streaming locators to print out the DASH and HLS manifest links
-// Optionally you can just build the paths if you are setting the manifest name and would like to create the streaming
-// manifest URls before you actually start streaming.
-// The paths in the function listPaths on streaming locators are not available until streaming has actually started.
-// Keep in mind that this workflow is not great when you need to have the manifest URL up front for a CMS.
-// It is just provided here for example of listing all the dynamic format paths available at runtime of the live event.
-// HLSマニフェストの取得
-export async function listStreamingPaths(
-  streamingLocatorName: string,
-  scheme: string,
-  hostname: string
-) {
-  let streamingPaths = await mediaServicesClient.streamingLocators.listPaths(
-    resourceGroup,
-    accountName,
-    streamingLocatorName
-  );
-
-  let hlsManifest: string;
-  let dashManifest: string;
-
-  // TODO : rewrite this to be more deterministic.
-  if (
-    streamingPaths.streamingPaths &&
-    streamingPaths.streamingPaths.length > 0
+  async function buildManifestPaths(
+    scheme: string,
+    hostname: string | undefined,
+    streamingLocatorId: string | undefined,
+    manifestName: string
   ) {
-    streamingPaths.streamingPaths.forEach((path) => {
-      if (path.streamingProtocol == 'Hls') {
-        if (path.paths) {
-          path.paths.forEach((hlsFormat) => {
-            // Look for the CMAF HLS format URL. This is the most current HLS version supported
-            if (hlsFormat.indexOf('m3u8-cmaf') > 0) {
-              hlsManifest = `${scheme}://${hostname}${hlsFormat}`;
-              console.log(`The HLS (MP4) manifest URL is : ${hlsManifest}`);
-              console.log(
-                'Open the following URL to playback the live stream in an HLS compliant player (HLS.js, Shaka, ExoPlayer) or directly in an iOS device'
-              );
-              console.log(`${hlsManifest}`);
-              console.log();
-              return hlsManifest;
-            }
-          });
-        }
-      }
-      if (path.streamingProtocol == 'Dash') {
-        if (path.paths) {
-          path.paths.forEach((dashFormat) => {
-            // Look for the CMAF DASH format URL. This is the most current DASH version supported
-            if (dashFormat.indexOf('cmaf') > 0) {
-              dashManifest = `${scheme}://${hostname}${dashFormat}`;
-              console.log(`The DASH manifest URL is : ${dashManifest}`);
+    const hlsFormat: string = 'format=m3u8-cmaf';
+    const dashFormat: string = 'format=mpd-time-cmaf';
 
-              console.log(
-                'Open the following URL to playback the live stream from the LiveOutput in the Azure Media Player'
-              );
-              console.log(
-                `https://ampdemo.azureedge.net/?url=${dashManifest}&heuristicprofile=lowlatency"`
-              );
-              console.log();
-            }
-          });
-        }
-      }
-    });
-  } else {
-    console.error(
-      'No streaming paths found. Make sure that the encoder is sending data to the ingest point.'
+    let manifestBase = `${scheme}://${hostname}/${streamingLocatorId}/${manifestName}.ism/manifest`;
+    hlsManifest = `${manifestBase}(${hlsFormat})`;
+    console.log(`The HLS (MP4) manifest URL is : ${hlsManifest}`);
+    console.log(
+      'Open the following URL to playback the live stream in an HLS compliant player (HLS.js, Shaka, ExoPlayer) or directly in an iOS device'
     );
+    console.log(`${hlsManifest}`);
+    console.log();
+
+    let dashManifest = `${manifestBase}(${dashFormat})`;
+    console.log(`The DASH manifest URL is : ${dashManifest}`);
+    console.log(
+      'Open the following URL to playback the live stream from the LiveOutput in the Azure Media Player'
+    );
+    let manifestPath = `https://ampdemo.azureedge.net/?url=${dashManifest}&heuristicprofile=lowlatency`;
+    console.log(
+      `https://ampdemo.azureedge.net/?url=${dashManifest}&heuristicprofile=lowlatency`
+    );
+    console.log();
   }
-  return '';
-}
+  async function listStreamingPaths(
+    streamingLocatorName: string,
+    scheme: string,
+    hostname: string
+  ) {
+    let streamingPaths = await mediaServicesClient.streamingLocators.listPaths(
+      resourceGroup,
+      accountName,
+      streamingLocatorName
+    );
 
-// <CreateStreamingLocator>
-export async function createStreamingLocator(
-  assetName: string,
-  locatorName: string
-) {
-  let streamingLocator = {
-    assetName: assetName,
-    streamingPolicyName: 'Predefined_ClearStreamingOnly' // no DRM or AES128 encryption protection on this asset. Clear means un-encrypted.
-  };
+    // let hlsManifest: string;
+    let dashManifest: string;
 
-  let locator = await mediaServicesClient.streamingLocators.create(
-    resourceGroup,
-    accountName,
-    locatorName,
-    streamingLocator
-  );
-
-  return locator;
-}
-// </CreateStreamingLocator>
-
-// <CleanUpResources>
-// Stops and cleans up all resources used in the sample
-// Be sure to double check the portal to make sure you do not have any accidentally leaking resources that are in billable states.
-// リソースを停止してクリーンアップ
-export async function cleanUpResources(
-  liveEventName: string,
-  liveOutputName: string
-) {
-  let liveOutputForCleanup = await mediaServicesClient.liveOutputs.get(
-    resourceGroup,
-    accountName,
-    liveEventName,
-    liveOutputName
-  );
-
-  // First clean up and stop all live outputs - "recordings"
-  // This will NOT delete the archive asset. It just stops the tape recording machine.
-  // All tapes (asset objects) are retained in your storage account and can continue to be streamed
-  // as on-demand content without any changes.
-
-  console.log('Deleting Live Output');
-  let timeStart = process.hrtime();
-  // Wait for this to cleanup first and then continue...
-  if (liveOutputForCleanup) {
-    await mediaServicesClient.liveOutputs
-      .beginDeleteAndWait(
-        resourceGroup,
-        accountName,
-        liveEventName,
-        liveOutputName,
-        {
-          updateIntervalInMs: longRunningOperationUpdateIntervalMs // Setting this adjusts the polling interval of the long running operation.
+    // TODO : rewrite this to be more deterministic.
+    if (
+      streamingPaths.streamingPaths &&
+      streamingPaths.streamingPaths.length > 0
+    ) {
+      streamingPaths.streamingPaths.forEach((path) => {
+        if (path.streamingProtocol == 'Hls') {
+          if (path.paths) {
+            path.paths.forEach((hlsFormat) => {
+              // Look for the CMAF HLS format URL. This is the most current HLS version supported
+              if (hlsFormat.indexOf('m3u8-cmaf') > 0) {
+                hlsManifest = `${scheme}://${hostname}${hlsFormat}`;
+                console.log(`The HLS (MP4) manifest URL is : ${hlsManifest}`);
+                console.log(
+                  'Open the following URL to playback the live stream in an HLS compliant player (HLS.js, Shaka, ExoPlayer) or directly in an iOS device'
+                );
+                console.log(`${hlsManifest}`);
+                console.log();
+              }
+            });
+          }
         }
-      )
-      .then(() => {
-        let timeEnd = process.hrtime(timeStart);
-        console.info(
-          `Execution time for delete live output: %ds %dms`,
-          timeEnd[0],
-          timeEnd[1] / 1000000
-        );
-        console.log();
+        if (path.streamingProtocol == 'Dash') {
+          if (path.paths) {
+            path.paths.forEach((dashFormat) => {
+              // Look for the CMAF DASH format URL. This is the most current DASH version supported
+              if (dashFormat.indexOf('cmaf') > 0) {
+                dashManifest = `${scheme}://${hostname}${dashFormat}`;
+                console.log(`The DASH manifest URL is : ${dashManifest}`);
+
+                console.log(
+                  'Open the following URL to playback the live stream from the LiveOutput in the Azure Media Player'
+                );
+                console.log(
+                  `https://ampdemo.azureedge.net/?url=${dashManifest}&heuristicprofile=lowlatency"`
+                );
+                console.log();
+              }
+            });
+          }
+        }
       });
+    } else {
+      console.error(
+        'No streaming paths found. Make sure that the encoder is sending data to the ingest point.'
+      );
+    }
   }
+  async function cleanUpResources(
+    liveEventName: string,
+    liveOutputName: string
+  ) {
+    let liveOutputForCleanup = await mediaServicesClient.liveOutputs.get(
+      resourceGroup,
+      accountName,
+      liveEventName,
+      liveOutputName
+    );
 
-  // OPTIONAL - If you want to immediately use the Asset for encoding, analysis, or other workflows, you can do so here.
-  // This is the point at which you can immediately use the archived, recorded asset in storage for other tasks.
-  // You do not need to wait for the live event to clean up before continuing with other tasks on the recorded output.
+    // First clean up and stop all live outputs - "recordings"
+    // This will NOT delete the archive asset. It just stops the tape recording machine.
+    // All tapes (asset objects) are retained in your storage account and can continue to be streamed
+    // as on-demand content without any changes.
 
-  // Once the above completes, you can refresh the player to see that the live stream has stopped and you are now viewing the recorded asset in on-demand mode.
-
-  // Next we will clean up the live event by stopping it and then deleting it.
-  // Stop can take some time, as it has to clean up resources async.
-
-  let liveEventForCleanup = await mediaServicesClient.liveEvents.get(
-    resourceGroup,
-    accountName,
-    liveEventName
-  );
-
-  console.log('Stopping Live Event...');
-  if (liveEventForCleanup) {
-    timeStart = process.hrtime();
-    if (liveEventForCleanup.resourceState == 'Running') {
-      await mediaServicesClient.liveEvents
-        .beginStopAndWait(
+    console.log('Deleting Live Output');
+    let timeStart = process.hrtime();
+    // Wait for this to cleanup first and then continue...
+    if (liveOutputForCleanup) {
+      await mediaServicesClient.liveOutputs
+        .beginDeleteAndWait(
           resourceGroup,
           accountName,
           liveEventName,
-          {
-            // It can be faster to delete all live outputs first, and then delete the live event.
-            // if you have additional workflows on the archive to run. Speeds things up!
-            //removeOutputsOnStop :true // this is OPTIONAL, but recommend deleting them manually first.
-          },
+          liveOutputName,
           {
             updateIntervalInMs: longRunningOperationUpdateIntervalMs // Setting this adjusts the polling interval of the long running operation.
           }
@@ -613,7 +521,7 @@ export async function cleanUpResources(
         .then(() => {
           let timeEnd = process.hrtime(timeStart);
           console.info(
-            `Execution time for Stop Live Event: %ds %dms`,
+            `Execution time for delete live output: %ds %dms`,
             timeEnd[0],
             timeEnd[1] / 1000000
           );
@@ -621,24 +529,88 @@ export async function cleanUpResources(
         });
     }
 
-    timeStart = process.hrtime();
-    // Delete the Live Event
-    console.log('Deleting Live Event...');
-    let deleteLiveEventOperation = await mediaServicesClient.liveEvents
-      .beginDeleteAndWait(resourceGroup, accountName, liveEventName, {
-        updateIntervalInMs: longRunningOperationUpdateIntervalMs // Setting this adjusts the polling interval of the long running operation.
-      })
-      .then(() => {
-        let timeEnd = process.hrtime(timeStart);
-        console.info(
-          `Execution time for Delete Live Event: %ds %dms`,
-          timeEnd[0],
-          timeEnd[1] / 1000000
-        );
-        console.log();
-      });
+    // OPTIONAL - If you want to immediately use the Asset for encoding, analysis, or other workflows, you can do so here.
+    // This is the point at which you can immediately use the archived, recorded asset in storage for other tasks.
+    // You do not need to wait for the live event to clean up before continuing with other tasks on the recorded output.
 
-    // IMPORTANT! Open the portal again and make CERTAIN that the live event is stopped and deleted - and that you do not have any billing live events running still.
+    // Once the above completes, you can refresh the player to see that the live stream has stopped and you are now viewing the recorded asset in on-demand mode.
+
+    // Next we will clean up the live event by stopping it and then deleting it.
+    // Stop can take some time, as it has to clean up resources async.
+
+    let liveEventForCleanup = await mediaServicesClient.liveEvents.get(
+      resourceGroup,
+      accountName,
+      liveEventName
+    );
+
+    console.log('Stopping Live Event...');
+    if (liveEventForCleanup) {
+      timeStart = process.hrtime();
+      if (liveEventForCleanup.resourceState == 'Running') {
+        await mediaServicesClient.liveEvents
+          .beginStopAndWait(
+            resourceGroup,
+            accountName,
+            liveEventName,
+            {
+              // It can be faster to delete all live outputs first, and then delete the live event.
+              // if you have additional workflows on the archive to run. Speeds things up!
+              //removeOutputsOnStop :true // this is OPTIONAL, but recommend deleting them manually first.
+            },
+            {
+              updateIntervalInMs: longRunningOperationUpdateIntervalMs // Setting this adjusts the polling interval of the long running operation.
+            }
+          )
+          .then(() => {
+            let timeEnd = process.hrtime(timeStart);
+            console.info(
+              `Execution time for Stop Live Event: %ds %dms`,
+              timeEnd[0],
+              timeEnd[1] / 1000000
+            );
+            console.log();
+          });
+      }
+
+      timeStart = process.hrtime();
+      // Delete the Live Event
+      console.log('Deleting Live Event...');
+      let deleteLiveEventOperation = await mediaServicesClient.liveEvents
+        .beginDeleteAndWait(resourceGroup, accountName, liveEventName, {
+          updateIntervalInMs: longRunningOperationUpdateIntervalMs // Setting this adjusts the polling interval of the long running operation.
+        })
+        .then(() => {
+          let timeEnd = process.hrtime(timeStart);
+          console.info(
+            `Execution time for Delete Live Event: %ds %dms`,
+            timeEnd[0],
+            timeEnd[1] / 1000000
+          );
+          console.log();
+        });
+
+      // IMPORTANT! Open the portal again and make CERTAIN that the live event is stopped and deleted - and that you do not have any billing live events running still.
+    }
   }
-  // </CleanUpResources>
+  async function createStreamingLocator(
+    assetName: string,
+    locatorName: string
+  ) {
+    let streamingLocator = {
+      assetName: assetName,
+      streamingPolicyName: 'Predefined_ClearStreamingOnly' // no DRM or AES128 encryption protection on this asset. Clear means un-encrypted.
+    };
+
+    let locator = await mediaServicesClient.streamingLocators.create(
+      resourceGroup,
+      accountName,
+      locatorName,
+      streamingLocator
+    );
+
+    return locator;
+  }
+
+  return NextResponse.json({ ingestUrl, hlsManifest, uniqueness });
 }

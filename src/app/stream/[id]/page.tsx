@@ -4,7 +4,7 @@ import Player from '~/components/streaming/Player';
 const Stream = () => {
   return (
     <div>
-      <Player src='https://streaming-shimesaba-jpea.streaming.media.azure.net/9462ac8e-52ac-4226-921c-c1cbe20fc8d7/output-20230520-200725-manifest.ism/manifest(format=m3u8-cmaf)' />
+      <Player src='https://shimesaba-jpea.streaming.media.azure.net/d51ba1ed-8333-4386-b328-176ee2c84fe5/output.ism/manifest(format=m3u8-cmaf)' />
     </div>
   );
 };

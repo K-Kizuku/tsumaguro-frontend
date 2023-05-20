@@ -1,4 +1,5 @@
 // 'use client';
+import { HeaderSearch } from '~/components/common/Header';
 import './globals.css';
 import { Inter } from 'next/font/google';
 // import { createGetInitialProps } from '@mantine/next';
@@ -19,7 +20,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang='en'>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <HeaderSearch />
+        {children}
+      </body>
     </html>
   );
 }
