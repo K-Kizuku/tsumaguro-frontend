@@ -155,7 +155,7 @@ export const StreamingList = () => {
                       {/* <Text size='lg'>{dice()}</Text> */}
                     </Avatar>
                     <div>
-                      <Text size='lg'>{e.owner_name}</Text>
+                      <Text size='lg'>{e.title}</Text>
                       <Text size='md' color='dimmed'>
                         {e.misc}
                       </Text>
