@@ -5,7 +5,6 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import type { ListInfo } from '~/types/list';
 import { Container } from '@mantine/core';
-import { streaminglistdummyData } from '~/data/demo';
 import Link from 'next/link';
 import {
   UnstyledButton,
@@ -16,6 +15,7 @@ import {
   rem,
   useMantineTheme
 } from '@mantine/core';
+import useLocalStorage from '~/hooks/useLocalstrage';
 
 const useStyles = createStyles((theme) => ({
   wrapper: {
@@ -108,15 +108,18 @@ const useStyles = createStyles((theme) => ({
 }));
 
 export const StreamingList = () => {
-  const [listData, setListData] = useState<ListInfo[]>(streaminglistdummyData);
-  const baseurl = process.env.BACKEND_URL ?? '';
+  const [listData, setListData] = useState<ListInfo[]>([]);
+  const baseurl = process.env.NEXT_PUBLIC_BACKEND_URL ?? '';
   const theme = useMantineTheme();
+  const [jwt, setJwt] = useLocalStorage('jwt', '');
 
   const fetchListData = async () => {
     try {
-      const data = await axios.get(baseurl + '/list');
-      setListData(streaminglistdummyData);
-      // setListData(data.data);
+      const data = await axios.get(baseurl + '/streams', {
+        headers: { Authorization: 'Baerer ' + jwt }
+      });
+      // setListData(streaminglistdummyData);
+      setListData(data.data);
     } catch (err) {
       console.error(err);
     }
@@ -147,7 +150,7 @@ export const StreamingList = () => {
       >
         {listData.map((e) => {
           return (
-            <Link href={`/stream?url=${e.url}`} key={e.id}>
+            <Link href={`/stream/${e.id}?url=${e.url}`} key={e.id}>
               <List.Item className='mx-5'>
                 <UnstyledButton>
                   <Group>
@@ -155,7 +158,7 @@ export const StreamingList = () => {
                       {/* <Text size='lg'>{dice()}</Text> */}
                     </Avatar>
                     <div>
-                      <Text size='lg'>{e.owner_name}</Text>
+                      <Text size='lg'>{e.title}</Text>
                       <Text size='md' color='dimmed'>
                         {e.misc}
                       </Text>
