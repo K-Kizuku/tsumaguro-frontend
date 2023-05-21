@@ -48,7 +48,7 @@ const Test = () => {
 }
 
   useEffect(() => {
-    socketRef.current = new WebSocket('ws://localhost:8001/socket')
+    socketRef.current = new WebSocket('ws://133.130.109.12:8501/socket')
 
     // 接続時の処理
     socketRef.current.onopen = function () {
