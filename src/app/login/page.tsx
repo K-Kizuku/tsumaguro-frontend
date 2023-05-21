@@ -18,7 +18,7 @@ import { ChangeEvent, useState } from 'react';
 import PasswordStrength from '~/components/atom/PasswordInput';
 import axios from 'axios';
 import { useDisclosure } from '@mantine/hooks';
-import { useLocalStorage } from '~/hooks/useLocalstrage';
+import useLocalStorage from '~/hooks/useLocalstrage';
 
 export default function AuthenticationTitle() {
   const [userInput, setUserInput] = useState<{
@@ -26,7 +26,7 @@ export default function AuthenticationTitle() {
     password: string;
   }>({ email: '', password: '' });
   const [isSignIn, setIsSignIn] = useState<boolean>(true);
-  const [value, setter] = useLocalStorage('jwt');
+  const [value, setter] = useLocalStorage('jwt', '');
   const [visible, { toggle }] = useDisclosure(false);
 
   const passwordHandler = (e: ChangeEvent<HTMLInputElement>) => {
@@ -46,7 +46,7 @@ export default function AuthenticationTitle() {
         email: userInput.email,
         password: userInput.password
       });
-      setter('jwt', temp.data.accses_token);
+      setter(temp.data.accses_token);
     };
     try {
       post();
@@ -65,7 +65,7 @@ export default function AuthenticationTitle() {
         email: userInput.email,
         password: userInput.password
       });
-      setter('jwt', temp.data.accses_token);
+      setter(temp.data.accses_token);
     };
     try {
       post();
@@ -137,7 +137,9 @@ export default function AuthenticationTitle() {
                   fullWidth
                   mt='xl'
                   onClick={(e) => {
-                    localStorage.setItem('name', userInput.email);
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem('name', userInput.email);
+                    }
                     toggle();
                     signin();
                   }}
@@ -150,7 +152,9 @@ export default function AuthenticationTitle() {
                 fullWidth
                 mt='xl'
                 onClick={(e) => {
-                  localStorage.setItem('name', userInput.email);
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('name', userInput.email);
+                  }
                   toggle();
                   signup();
                 }}

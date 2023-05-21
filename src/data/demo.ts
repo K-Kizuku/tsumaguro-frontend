@@ -1,4 +1,4 @@
-import type { ListInfo } from '~/app/types/list';
+import type { ListInfo } from '~/types/list';
 
 export const streaminglistdummyData: ListInfo[] = [
   {

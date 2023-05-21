@@ -3,7 +3,7 @@ import { List, ThemeIcon } from '@mantine/core';
 import { IconCircleCheck, IconCircleDashed } from '@tabler/icons-react';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-import type { ListInfo } from '~/app/types/list';
+import type { ListInfo } from '~/types/list';
 import { Container } from '@mantine/core';
 import { streaminglistdummyData } from '~/data/demo';
 import Link from 'next/link';
@@ -13,7 +13,8 @@ import {
   Avatar,
   Text,
   createStyles,
-  rem
+  rem,
+  useMantineTheme
 } from '@mantine/core';
 
 const useStyles = createStyles((theme) => ({
@@ -109,6 +110,8 @@ const useStyles = createStyles((theme) => ({
 export const StreamingList = () => {
   const [listData, setListData] = useState<ListInfo[]>(streaminglistdummyData);
   const baseurl = process.env.BACKEND_URL ?? '';
+  const theme = useMantineTheme();
+
   const fetchListData = async () => {
     try {
       const data = await axios.get(baseurl + '/list');
@@ -121,9 +124,13 @@ export const StreamingList = () => {
   useEffect(() => {
     fetchListData();
   }, []);
-  const dice = () => {
-    const d = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
-    return d[Math.floor(Math.random() * 5)];
+  // const dice = () => {
+  //   const d = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+  //   return d[Math.floor(Math.random() * 5)];
+  // };
+  const dice2 = () => {
+    const color = Object.keys(theme.colors);
+    return color[Math.floor(Math.random() * 9)][Math.floor(Math.random() * 9)];
   };
   return (
     <Container size='lg'>
@@ -132,19 +139,19 @@ export const StreamingList = () => {
         spacing='xs'
         size='sm'
         center
-        icon={
-          <Avatar size={60} color='blue'>
-            <Text size='lg'>{dice()}</Text>
-          </Avatar>
-        }
+        // icon={
+        //   <Avatar size={60} color='blue'>
+        //     <Text size='lg'>{dice()}</Text>
+        //   </Avatar>
+        // }
       >
         {listData.map((e) => {
           return (
-            <Link href={e.url} key={e.id}>
-              <List.Item>
+            <Link href={`/stream?url=${e.url}`} key={e.id}>
+              <List.Item className='mx-5'>
                 <UnstyledButton>
                   <Group>
-                    <Avatar size={60} color='blue'>
+                    <Avatar size={60} color={dice2()}>
                       {/* <Text size='lg'>{dice()}</Text> */}
                     </Avatar>
                     <div>
