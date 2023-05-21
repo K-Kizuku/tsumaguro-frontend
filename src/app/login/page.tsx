@@ -19,6 +19,7 @@ import PasswordStrength from '~/components/atom/PasswordInput';
 import axios from 'axios';
 import { useDisclosure } from '@mantine/hooks';
 import useLocalStorage from '~/hooks/useLocalstrage';
+import { useRouter } from 'next/navigation';
 
 export default function AuthenticationTitle() {
   const [userInput, setUserInput] = useState<{
@@ -27,7 +28,9 @@ export default function AuthenticationTitle() {
   }>({ email: '', password: '' });
   const [isSignIn, setIsSignIn] = useState<boolean>(true);
   const [value, setter] = useLocalStorage('jwt', '');
+  const [userId, setUserId] = useLocalStorage('user_id', '');
   const [visible, { toggle }] = useDisclosure(false);
+  const router = useRouter();
 
   const passwordHandler = (e: ChangeEvent<HTMLInputElement>) => {
     setUserInput((ele) => {
@@ -42,11 +45,15 @@ export default function AuthenticationTitle() {
 
   const signin = () => {
     const post = async () => {
-      const temp = await axios.post(process.env.BACKEND_URL + '/auth/login', {
-        email: userInput.email,
-        password: userInput.password
-      });
-      setter(temp.data.accses_token);
+      const temp = await axios
+        .post(process.env.NEXT_PUBLIC_BACKEND_URL + '/auth/login', {
+          username: userInput.email,
+          password: userInput.password
+        })
+        .then((res) => {
+          setter(res.data.access_token);
+          router.push('/list');
+        });
     };
     try {
       post();
@@ -61,11 +68,26 @@ export default function AuthenticationTitle() {
 
     toggle();
     const post = async () => {
-      const temp = await axios.post(process.env.BACKEND_URL + '/signup', {
-        email: userInput.email,
-        password: userInput.password
-      });
-      setter(temp.data.accses_token);
+      const temp = await axios.post(
+        process.env.NEXT_PUBLIC_BACKEND_URL + '/users',
+        {
+          email: userInput.email,
+          password: userInput.password
+        },
+        {
+          headers: { SecFetchDest: 'no-cors' }
+        }
+      );
+      setUserId(temp.data.id);
+      const sign = await axios
+        .post(process.env.NEXT_PUBLIC_BACKEND_URL + '/auth/login', {
+          username: userInput.email,
+          password: userInput.password
+        })
+        .then((res) => {
+          setter(res.data.access_token);
+          router.push('/list');
+        });
     };
     try {
       post();

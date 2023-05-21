@@ -13,7 +13,8 @@ import {
   TextInput,
   Button,
   Title,
-  LoadingOverlay
+  LoadingOverlay,
+  CopyButton
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconSearch } from '@tabler/icons-react';
@@ -108,6 +109,8 @@ export function HeaderSearch() {
     useDisclosure(false);
   const { classes } = useStyles();
   const [visible, { toggle: loadingToggle }] = useDisclosure(false);
+  const [flag, setFrag] = useState<boolean>(false);
+  const [listUrl, setListUrl] = useState<Stream>();
 
   const [userInput, setUserInput] = useState<{ title: string; misc: string }>({
     title: '',
@@ -129,29 +132,33 @@ export function HeaderSearch() {
 
   const getliveUrl = () => {
     const getreq = async () => {
-      const temp: Stream = await axios.get('http://localhost:3000/api');
-      setterLiveId(temp.uniqueness);
-      //   const res = await axios.post(
-      //     process.env.NEXT_PUBLIC_BACKEND_URL + '/stream',
-      //     {
-      //       title: userInput?.title,
-      //       misc: userInput?.misc,
-      //       url: temp.hlsManifest
-      //     },
-      //     {
-      //       headers: {
-      //         Authorization: 'Bearer ' + value
-      //       }
-      //     }
-      //   );
-      try {
-        getreq();
-      } catch (err) {
-        console.error(err);
-      } finally {
-        loadingToggle();
-      }
+      const temp = await axios('/api').then((res) => {
+        console.log('ok');
+        setterLiveId(res.data.uniqueness);
+        const resq = axios.post(
+          process.env.NEXT_PUBLIC_BACKEND_URL + '/streams',
+          {
+            title: userInput?.title,
+            misc: userInput?.misc,
+            url: res.data.hlsManifest
+          },
+          {
+            headers: {
+              Authorization: 'Bearer ' + value
+            }
+          }
+        );
+        setListUrl(res.data);
+      });
     };
+    try {
+      getreq();
+      loadingToggle();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      loadingToggle();
+    }
   };
 
   return (
@@ -256,46 +263,57 @@ export function HeaderSearch() {
                 centered
               >
                 <LoadingOverlay visible={visible} overlayBlur={2} />
-                <div className={classes.form}>
-                  <TextInput
-                    label='配信タイトル'
-                    placeholder='タイトル'
-                    onChange={(e) =>
-                      setUserInput((ele) => {
-                        return { ...ele, title: e.target.value };
-                      })
-                    }
-                  />
-                  <Textarea
-                    label='みんなに一言'
-                    placeholder='是非見てね！'
-                    minRows={4}
-                    mt='md'
-                    classNames={{
-                      input: classes.input,
-                      label: classes.inputLabel
-                    }}
-                    onChange={(e) =>
-                      setUserInput((ele) => {
-                        return { ...ele, misc: e.target.value };
-                      })
-                    }
-                  />
-
-                  <Group position='center' mt='md'>
-                    <Button
-                      className={classes.control}
-                      fullWidth
-                      onClick={() => {
-                        loadingToggle();
-                        getliveUrl();
+                {!flag ? (
+                  <div className={classes.form}>
+                    <TextInput
+                      label='配信タイトル'
+                      placeholder='タイトル'
+                      onChange={(e) =>
+                        setUserInput((ele) => {
+                          return { ...ele, title: e.target.value };
+                        })
+                      }
+                    />
+                    <Textarea
+                      label='みんなに一言'
+                      placeholder='是非見てね！'
+                      minRows={4}
+                      mt='md'
+                      classNames={{
+                        input: classes.input,
+                        label: classes.inputLabel
                       }}
-                      color='red'
-                    >
-                      配信準備開始！
-                    </Button>
-                  </Group>
-                </div>
+                      onChange={(e) =>
+                        setUserInput((ele) => {
+                          return { ...ele, misc: e.target.value };
+                        })
+                      }
+                    />
+
+                    <Group position='center' mt='md'>
+                      <Button
+                        className={classes.control}
+                        fullWidth
+                        onClick={() => {
+                          getliveUrl();
+                        }}
+                        color='red'
+                      >
+                        配信準備開始！
+                      </Button>
+                    </Group>
+                  </div>
+                ) : (
+                  <div>
+                    <CopyButton value={listUrl?.ingestUrl ?? ''}>
+                      {({ copied, copy }) => (
+                        <Button color={copied ? 'teal' : 'blue'} onClick={copy}>
+                          {copied ? 'Copied url' : 'Copy url'}
+                        </Button>
+                      )}
+                    </CopyButton>
+                  </div>
+                )}
               </Modal>
             </Tabs.Panel>
 
